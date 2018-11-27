@@ -1,0 +1,322 @@
+%title: Economic Exchange for Everyone Else
+%author: James Edwards
+%date: 2018-03-08
+
+-> Ovid/Tau Station : Slide 1 <-
+=========
+
+
+At The Perl Conference 2017 in Washington DC, Curtis Poe gave a talk
+titled [Modeling a Universe in Perl](http://www.perlconference.us/tpc-2017-dc/talks/#modeling_a_universe_in_perl)
+  [Video](https://www.youtube.com/watch?v=UmLwYLSmTSs)
+
+  Declarative Perl
+    Series of Steps in Subject Verb Object Structure
+      Iterates over each of the steps in succession, and if any of them fail,
+      all changes are discarded and the failed transaction is logged. If all
+      of the steps succeed, every object which was updated is then stored in
+      the database and we log a successful transaction.
+
+
+    08        Steps(
+    09               topic_areaX( recipient => verb   => object ),
+    10               topic_areaX( recipient => verb   => object ),
+    11               topic_areaX( recipient => verb   => object ),
+    12       ),
+
+The 'topic_area' is a class and the SVO arguments help to build the instance.
+
+-------------------------------------------------
+
+-> # Tau Station code tease : Slide 2 <-
+
+
+
+*code snippet*  Visit a clone vat and gestated a new clone 
+
+    01 sub purchase_clone {
+    02   my ($self) = @_;
+    03
+    04   my $succeeded = $self->new_exchange(
+    05        slug            => 'purchase-clone',
+    06        success_message => 'You have purchased a new clone',
+    07        failure_message => 'You could not purchase a new clone',
+    08        Steps(
+    09                  Location( $self      => is_in_area   => 'clonevat'              ),
+    10                  Wallet(   $self      => pay          => $self->price('cloning') ),
+    11                  Clone(    $self      => gestate      => $self->station_area     ),
+    12        ),
+    13   );
+    14 }
+
+-------------------------------------------------
+
+-> # Tau Station code tease continue : Slide 3 <-
+
+
+
+Addition information about Ovid's Economic Exchange
+
+    08        Steps(
+    09                  Location( $self      => is_in_area   => 'clonevat'              ),
+    10                  Wallet(   $self      => pay          => $self->price('cloning') ),
+    11                  Clone(    $self      => gestate      => $self->station_area     ),
+    12        ),
+
+Ovid
+     *Steps* is actually a constructor which takes a list of economic action 
+     objects. *Wallet* is a constructor for a Veure::Economy::Asset::Wallet instance
+
+
+-------------------------------------------------
+
+-> # An important issue to think out : Slide 4 <-
+
+
+
+    01 Purchase_Stuff_From_Game_Crafter(
+    02   'arg1',
+    03   'arg2',
+    04   Steps(
+    05               one('stuff'),
+    06               two('more stuff'),
+    07   ),
+    08 );
+*========================================================*
+
+If *Steps* is a subroutine, subroutines *one* and *two*
+would be excuted and *Steps* would get an array of EXPRs
+[ void content, scalar, list ]
+
+Also if the arguments to subroutines *one* and *two* were subroutine(s)/methods,
+they would be executed before *Steps* would be executed.
+
+You want to control if and when subroutines/steps are to be excuted.
+
+Check out prototypes/t10.pl in the source code archive.
+
+-------------------------------------------------
+
+-> # Not everyone else writes code in Subject Verb Object Structure : Slide 5 <-
+
+
+
+If you created multiple subroutines to be wrapped in a trnasaction, you
+probably would not have written the subroutines as class constructors.
+
+So this 'proof of concept' is a source filter to allow you to use Ovid's 
+*Declarative Perl* to write *Economic Exchanges* .
+
+I'll pass references of anonymous subroutines for the steps of the Economic Exchange.
+The steps are really *states* of a *State Machine*.
+  sub { ... },      # is a ref to a subroutine
+
+-------------------------------------------------
+
+-> # Not everyone else writes code in SVO Structure continue: Slide 6 <-
+
+
+
+ *jimE's source filter (lib/myfilter.pm) rules*
+
+We're keeping this simple
+
+0) Works only with modules. Looks for '1;' before EOF
+     In this 'proof of concept', I just append by *Steps*
+     subroutine to the bottom of the source code.
+
+1) Each step defined on a single line in the original source.
+    (probably have to change PerlTidy for 80+ character lines)
+
+2) If an exception is caught (Try::Tiny), just gonna rethrow it!
+     die $_; # rethrow
+     Note: JT Smith's Ouch.pm is kool for creating exceptions.
+
+3) Your project needs to create it's own begin, end and rollback transaction subroutines.
+
+4) Subroutines used in a step return FALSE for bad, else everything is TRUE.
+
+5) 'Steps' should be the last argument of a subroutine call.
+   I haven't tested if it is not.
+
+
+-------------------------------------------------
+
+->  Will Handle *Behaviors* : Slide 7  <-
+
+
+
+   Purchase_Some_Stuff_From_Game_Crafter(
+      'arg1',
+      'arg2',
+      Steps(
+         *ASSERT*(  func0() ),
+                  func1(),
+                  func2(),
+         *FAILURE*( func3() ),
+         *ALWAYS*(  func4() ),
+      ),
+   );
+
+*========================================================*
+I like Ovid's optional 'behavior' attributes. 
+
+-------------------------------------------------
+
+->  Behaviors : Slide 8  <-
+
+
+
+Stolen from Curtis 'Ovid' Poe
+
+Posted on April 20, 2018
+[Extending Economic Exchange Conditions](https://blog.taustation.space/blog/extending-economic-exchange-conditions/)
+
+These behaviors alter the flow of steps:
+
+*ASSERT*  – If this step fails, do not call any other steps for any reason.
+*ALWAYS*  – Always run this step (unless an ASSERT was previously failed).
+*FAILURE* – Run this step if any earlier step failed (unless an ASSERT was 
+          previously failed).
+
+Note: For this 'proof of concept', the behavior ASSERTions are the first
+      N number of arguments to *Steps*.
+
+-------------------------------------------------
+
+->  The Source Filter Will ...  : Slide 9  <-
+
+
+
+Handle this format of a procedure like call
+
+my $rc = Steps(
+            one('stuff'),
+            two('more stuff'),
+         );
+
+*========================================================*
+The assignment statement before the 'Steps(' trips the flag.
+
+-------------------------------------------------
+
+->  Use Template(s) For Your Coding  : Slide 10  <-
+
+
+
+Otherwise your amount of chanting will increase.
+
+AND
+
+You will be spending time in the debugger to see what the source filter created.
+
+
+ex: 
+    perl -d  run.pl
+    f lib/PurchaseClones.pm
+    |  l 1-400
+
+*========================================================*
+Source code has a 'templates' directory.
+
+-------------------------------------------------
+
+->  Post Mortem  : Slide 11  <-
+
+
+
+0) Migrate 'STEPS' subroutine into a module and handle
+   importing subroutine(s)/methods
+
+1) Put more logic into Economic Exchange.
+     Q: After a simple step (no Behavior) fails and
+        you're going thru FAILUREs and ALWAY(S) steps,
+        what if one of them fails? Currently I'm punting.
+   You're going to need to modify the Economic Exchange
+   to meet your organizaiton's requirements
+
+-------------------------------------------------
+
+->  Post Mortem's Anonymous Subroutines Revisited   : Slide 12  <-
+
+
+
+Purchase_Stuff_From_Game_Crafter( 
+      'arg1',
+      'arg2', 
+      Steps(
+            ALWAYS( one('stuff')),  # overkill, but I want to show filter output
+      ),
+);
+
+*Turns into*
+
+Purchase_Stuff_From_Game_Crafter( 
+      'arg1',
+      'arg2', 
+      STEPS (
+        [ 'ALWAYS', (sub { one('stuff') }), ],
+      ),
+);
+
+*========================================================*
+My 'STEPS' subroutine will be appended to the *End Of Module*.
+
+-------------------------------------------------
+
+->  Ovid's Communications on the topic (if you choose to drink the Kool-Aid)  : Slide 13 <-
+
+
+
+Posted on December 15, 2016 [The Tau Station Universe: Software](https://blog.taustation.space/blog/the-tau-station-universe-software/)
+
+Posted on April 20, 2017    [On writing clean code](https://blog.taustation.space/blog/on-writing-clean-code/)
+
+Posted on June 13, 2017     [Writing Declarative Perl](http://blogs.perl.org/users/ovid/2017/06/writing-declarative-perl.html)
+
+Posted on February 8, 2018  [On writing clean code … for combat](https://blog.taustation.space/blog/on-writing-clean-code-for-combat/)
+
+Posted on April 20, 2018    [Extending Economic Exchange Conditions](https://blog.taustation.space/blog/extending-economic-exchange-conditions/)
+
+[Modeling a Universe in Perl](http://www.perlconference.us/tpc-2017-dc/talks/#modeling_a_universe_in_perl)
+[Video](https://www.youtube.com/watch?v=UmLwYLSmTSs)
+
+-------------------------------------------------
+
+-> A *'Modeling a Universe'* update : Slide 14  <-
+
+
+At the Swiss Perl WorkShop 2018, Mr. Poe presentation:
+
+0) Did not mention Behaviors
+
+1) He said Tau Station does not do any logging
+
+   BUT
+
+   Any Economic Exchange that fails, creates a 'Error Report' of the entire 'Steps' call
+   with fields filled in instead of variable names.
+      [ Day 1, 41st minute ]
+
+   Maybe thats why Tau Station uses constructors for individual steps.
+   Pass back an object with lots of info.
+
+   But this was Economic Exchange For Everyone Else!
+
+-------------------------------------------------
+
+-> The End. <-
+
+
+
+Purchase Mr. Curtis Poe's Books
+
+
+Modules used
+  Moo                 # for test program's method calls
+  Try::Tiny           # can be easily be replaced
+  Filter::Util::Call
+
+Note: When you run the test program ( $ perl run.pl ), that if a step has
+      a subroutine as an argument, it is executed only when the current 
+      step/state is under consideration.
