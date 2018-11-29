@@ -3,7 +3,7 @@
 Proof of concept of Business State Machine for Transactions
 
 I made multiple presenations on the progress of this project at the Madison Perl Mongers (MadMongers) in 2018.
-Please review the mdp presentation EE.mdp in
+Please review the mdp presentation EE.mdp
 
 A 'proof of concept' on Ovid's Declarative Perl Transaction syntax
 
@@ -34,8 +34,6 @@ A 'proof of concept' on Ovid's Declarative Perl Transaction syntax
 
 
 1. Didn't use constructors like Ovid did
-     CP > 'Area' is a constructor for a Veure::Economy::Asset::Area instance...
-   Didn't know how to do it so I just made lib/AssetSteps.pl
 
 2. I used a source filter, "Filter::Util::Call", lib/myfilter.pm 
    Each step must be on a single line!!!
