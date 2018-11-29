@@ -1,16 +1,46 @@
 # Economic Exchange For Everyone Else
 
-Business State Machine for Transactions
-Proof of concept
+Proof of concept of Business State Machine for Transactions
 
-I made multiple presenations on the progress of this project
-at the Madison Perl Mongers (MadMongers) in 2018
-
+I made multiple presenations on the progress of this project at the Madison Perl Mongers (MadMongers) in 2018.
 Please review the mdp presentation EE.mdp in
 
-Remember in this source filter, each step must be on a single line!!!
-If you desire something more accommodating, consider yourself to be
-empowered. This is only a proof of concept.
+A 'proof of concept' on Ovid's Declarative Perl Transaction syntax
+
+  Declarative Perl
+    Series of Steps in Subject Verb Object Structure
+      Iterates over each of the steps in succession, and if any of them fail, 
+      all changes are discarded and the failed transaction is logged. If all 
+      of the steps succeed, every object which was updated is then stored in 
+      the database and we log a successful transaction.
+
+    sub purchase_clone {
+       my ($self) = @_;
+       ...
+       my $succeeded = $self->new_exchange(
+            slug            => 'purchase-clone',
+            success_message => 'You have purchased a new clone',
+            failure_message => 'You could not purchase a new clone',
+            Steps(
+                      Location( $self      => is_in_area   => 'clonevat'              ),
+                      Wallet(   $self      => pay          => $self->price('cloning') ),
+                      Clone(    $self      => gestate      => $self->station_area     ),
+             FAILURE( Wallet(   $character => remove       => $bet_amount ) ),
+             ALWAYS( Wallet( $character => show_balance ) ),
+          ),
+       );
+       ...
+    }
+
+
+1. Didn't use constructors like Ovid did
+     CP > 'Area' is a constructor for a Veure::Economy::Asset::Area instance...
+   Didn't know how to do it so I just made lib/AssetSteps.pl
+
+2. I used a source filter, "Filter::Util::Call", lib/myfilter.pm 
+   Each step must be on a single line!!!
+   If you desire something more accommodating, consider yourself to be
+   empowered. This is only a proof of concept.
 
 run.pl is a sample program ( $ perl run.pl )
 
